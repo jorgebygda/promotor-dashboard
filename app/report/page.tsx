@@ -98,13 +98,22 @@ function ReportContent() {
 
   return (
     <div className="px-4 pt-6 pb-28">
-      <div className="mb-5">
-        <h1 className="text-2xl font-bold text-gray-900">
+      <div className="mb-6">
+        <div className="flex items-center gap-2 mb-1">
+          <span
+            className={`w-2 h-2 rounded-full animate-pulse-dot ${
+              stockMode ? "bg-amber-400" : "bg-brand-400"
+            }`}
+          />
+          <span className="text-xs font-medium text-slate-400 uppercase tracking-wider">
+            {state.storeName}
+          </span>
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900">
           {stockMode ? "Actualizar Stock" : "Registrar Ventas"}
         </h1>
-        <p className="text-sm text-gray-500 mt-1">{state.storeName}</p>
         {!stockMode && (
-          <p className="text-xs text-gray-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1">
             Stock de referencia — usá &quot;Actualizar stock&quot; desde el
             Dashboard cuando llegue mercadería
           </p>
@@ -112,27 +121,30 @@ function ReportContent() {
       </div>
 
       {!stockMode && (
-        <div className="mb-4">
+        <div className="mb-5">
+          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">
+            Fecha
+          </label>
           <input
             type="date"
             value={state.reportDate}
             onChange={(e) =>
               dispatch({ type: "SET_REPORT_DATE", payload: e.target.value })
             }
-            className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm font-medium text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-500"
+            className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-brand-500/40 focus:border-brand-400 transition-all shadow-soft"
           />
         </div>
       )}
 
-      <div className="flex gap-2 overflow-x-auto pb-3 mb-3 scrollbar-hide">
+      <div className="flex gap-2 overflow-x-auto pb-3 mb-4 scrollbar-hide">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setSelectedCategory(cat)}
-            className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition-colors ${
+            className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-medium transition-all duration-200 ${
               selectedCategory === cat
-                ? "bg-brand-600 text-white"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                ? "bg-brand-600 text-white shadow-md shadow-brand-200"
+                : "bg-white text-slate-500 border border-slate-200 hover:border-slate-300 hover:text-slate-700 shadow-soft"
             }`}
           >
             {cat}
@@ -161,7 +173,7 @@ function ReportContent() {
         <button
           onClick={handleSave}
           disabled={!canSave}
-          className="w-full bg-brand-600 hover:bg-brand-700 active:bg-brand-800 text-white font-semibold py-4 px-6 rounded-xl shadow-lg shadow-brand-200 transition-all text-lg disabled:opacity-40 disabled:cursor-not-allowed"
+          className="w-full bg-gradient-to-r from-brand-600 to-brand-500 hover:from-brand-700 hover:to-brand-600 active:from-brand-800 active:to-brand-700 text-white font-semibold py-4 px-6 rounded-2xl shadow-lg shadow-brand-200/60 transition-all duration-200 text-base disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none"
         >
           {stockMode ? "Guardar Stock" : "Guardar Ventas"}
         </button>
@@ -172,7 +184,11 @@ function ReportContent() {
 
 export default function ReportPage() {
   return (
-    <Suspense fallback={<div className="px-4 pt-6 text-sm text-gray-400">Cargando...</div>}>
+    <Suspense
+      fallback={
+        <div className="px-4 pt-6 text-sm text-slate-400">Cargando...</div>
+      }
+    >
       <ReportContent />
     </Suspense>
   )

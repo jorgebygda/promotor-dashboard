@@ -32,7 +32,7 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AppProvider>
-          <div className="max-w-lg mx-auto min-h-screen bg-gray-50 relative">
+          <div className="max-w-lg mx-auto min-h-screen relative">
             <Toast />
             <main>{children}</main>
             <BottomNav />

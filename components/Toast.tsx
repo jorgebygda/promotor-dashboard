@@ -19,8 +19,10 @@ export default function Toast() {
 
   return (
     <div className="fixed top-4 left-4 right-4 z-[100] max-w-lg mx-auto animate-slide-down">
-      <div className="bg-gray-900 text-white text-sm font-medium px-4 py-3 rounded-xl shadow-lg flex items-center gap-2">
-        <span className="text-green-400 text-lg">✓</span>
+      <div className="bg-slate-900 text-white text-sm font-medium px-5 py-3.5 rounded-2xl shadow-xl shadow-black/10 flex items-center gap-3 backdrop-blur-sm">
+        <span className="w-6 h-6 rounded-full bg-green-500/20 text-green-400 flex items-center justify-center text-sm font-bold">
+          ✓
+        </span>
         {state.savedMessage}
       </div>
     </div>
