@@ -136,7 +136,7 @@ export default function Dashboard() {
       </button>
 
       <button
-        onClick={() => router.push("/report?mode=stock")}
+        onClick={() => router.push("/stock")}
         className="w-full bg-white hover:bg-slate-50 active:bg-slate-100 text-slate-700 font-medium py-3.5 px-6 rounded-2xl border border-slate-200 shadow-soft transition-all duration-200 text-sm mb-6"
       >
         Actualizar stock
