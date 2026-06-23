@@ -94,7 +94,7 @@ export default function Dashboard() {
 
   const currentIotLevel = [...state.monthlyObjectives.iotLevels]
     .reverse()
-    .find((l) => accessoryPct >= l.percentage)
+    .find((l) => accessorySales >= Math.ceil(totalTarget * l.percentage / 100))
 
   const ihsPct = state.totalStoreSales > 0
     ? Math.round((monthlySales / state.totalStoreSales) * 100)
@@ -296,10 +296,11 @@ export default function Dashboard() {
               style={{ width: `${Math.min(100, accessoryPct)}%` }}
             />
           </div>
-          <p className="text-xs text-slate-400 mb-3">{accessoryPct}% del objetivo ({accessorySales} / {totalTarget})</p>
+          <p className="text-xs text-slate-400 mb-3">{accessoryPct}% del objetivo de móviles ({accessorySales} / {totalTarget})</p>
           <div className="space-y-1.5">
             {state.monthlyObjectives.iotLevels.map((l) => {
-              const achieved = accessoryPct >= l.percentage
+              const needed = Math.ceil(totalTarget * l.percentage / 100)
+              const achieved = accessorySales >= needed
               return (
                 <div
                   key={l.level}
@@ -309,15 +310,17 @@ export default function Dashboard() {
                       : "bg-slate-50 text-slate-400"
                   }`}
                 >
-                  <span>Nivel {l.level}: {l.percentage}%</span>
+                  <span>Nivel {l.level}: {needed} ud. ({l.percentage}% de {totalTarget})</span>
                   <span className="tabular-nums">{l.bonus}€ {achieved ? "✓" : ""}</span>
                 </div>
               )
             })}
           </div>
-          {currentIotLevel && (
+          {accessorySales > 0 && (
             <p className="text-sm font-semibold text-indigo-600 mt-3">
-              Bonus actual: {currentIotLevel.bonus}€ (Nivel {currentIotLevel.level})
+              {currentIotLevel
+                ? `Bonus actual: ${currentIotLevel.bonus}€ (Nivel ${currentIotLevel.level})`
+                : `Faltan ${Math.ceil(totalTarget * state.monthlyObjectives.iotLevels[0].percentage / 100) - accessorySales} accesorios para Nivel 1`}
             </p>
           )}
         </div>
