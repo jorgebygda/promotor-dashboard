@@ -1,13 +1,22 @@
 "use client"
 
-import { Suspense, useState, useMemo } from "react"
+import { Suspense, useState, useMemo, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useApp } from "@/context/AppContext"
 import ProductCard from "@/components/ProductCard"
 
 function ReportContent() {
-  const { state, dispatch, saveDailyReport } = useApp()
+  const { state, dispatch, saveDailyReport, loadSalesFromReport } = useApp()
   const router = useRouter()
+
+  useEffect(() => {
+    const existing = state.dailyReports.find((r) => r.date === state.reportDate)
+    if (existing) {
+      loadSalesFromReport(existing)
+    } else {
+      dispatch({ type: "LOAD_SALES_FROM_REPORT", payload: { id: "", date: state.reportDate, sales: [], stock: [], completed: false, createdAt: "" } })
+    }
+  }, [state.reportDate])
 
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas")
 
