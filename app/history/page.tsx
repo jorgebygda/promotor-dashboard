@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useApp } from "@/context/AppContext"
 
 export default function HistoryPage() {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, loadSalesFromReport } = useApp()
   const router = useRouter()
   const [filterDate, setFilterDate] = useState<string>("")
   const [activeTab, setActiveTab] = useState<"diario" | "competencia">(
@@ -36,7 +36,7 @@ export default function HistoryPage() {
   const handleLoadReport = (reportId: string) => {
     const report = state.dailyReports.find((r) => r.id === reportId)
     if (report) {
-      dispatch({ type: "LOAD_SALES_FROM_REPORT", payload: report })
+      loadSalesFromReport(report)
       router.push("/report")
     }
   }

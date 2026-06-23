@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { useApp } from "@/context/AppContext"
 
 export default function StockPage() {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, saveStockUpdate } = useApp()
   const router = useRouter()
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas")
 
@@ -22,8 +22,8 @@ export default function StockPage() {
   const getStock = (productId: string) =>
     state.currentStock.find((s) => s.productId === productId)?.quantity ?? 0
 
-  const handleSave = () => {
-    dispatch({ type: "SAVE_STOCK_UPDATE" })
+  const handleSave = async () => {
+    await saveStockUpdate()
     router.push("/")
   }
 

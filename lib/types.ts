@@ -5,6 +5,33 @@ export interface Product {
   category: string
 }
 
+export interface CommissionTarget {
+  productId: string
+  targetUnits: number
+  commission75: number
+  commission100: number
+  isPriority: boolean
+}
+
+export interface IoTLevel {
+  level: number
+  percentage: number
+  bonus: number
+}
+
+export interface IHSLevel {
+  percentage: number
+  bonus: number
+}
+
+export interface MonthlyObjectives {
+  totalTarget: number
+  accessoryTarget: number
+  commissionTargets: CommissionTarget[]
+  iotLevels: IoTLevel[]
+  ihsLevels: IHSLevel[]
+}
+
 export interface StockEntry {
   productId: string
   quantity: number

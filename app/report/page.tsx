@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext"
 import ProductCard from "@/components/ProductCard"
 
 function ReportContent() {
-  const { state, dispatch } = useApp()
+  const { state, dispatch, saveDailyReport } = useApp()
   const router = useRouter()
 
   const [selectedCategory, setSelectedCategory] = useState<string>("Todas")
@@ -66,8 +66,8 @@ function ReportContent() {
     }
   }
 
-  const handleSave = () => {
-    dispatch({ type: "SAVE_DAILY_REPORT" })
+  const handleSave = async () => {
+    await saveDailyReport()
     router.push("/")
   }
 

@@ -1,21 +1,20 @@
 "use client"
 
-import { createContext, useContext, useReducer, ReactNode } from "react"
 import {
-  DailyReport,
-  CompetitionReport,
-  StockEntry,
-  SaleEntry,
-} from "@/lib/types"
-import {
-  products,
-  storeName,
-  mockDailyReports,
-  mockCompetitionReports,
-} from "@/lib/mockData"
+  createContext,
+  useContext,
+  useReducer,
+  useEffect,
+  useCallback,
+  ReactNode,
+} from "react"
+import { DailyReport, CompetitionReport, StockEntry, SaleEntry } from "@/lib/types"
+import { products as localProducts } from "@/lib/mockData"
+import { monthlyObjectives } from "@/lib/objectives"
+import { supabase } from "@/lib/supabase"
 
 interface AppState {
-  products: typeof products
+  products: typeof localProducts
   storeName: string
   dailyReports: DailyReport[]
   competitionReports: CompetitionReport[]
@@ -24,43 +23,54 @@ interface AppState {
   stockEditMode: boolean
   reportDate: string
   savedMessage: string | null
+  monthlyObjectives: typeof monthlyObjectives
+  totalStoreSales: number
+  loading: boolean
 }
 
 type Action =
+  | { type: "INIT_STATE"; payload: { dailyReports: DailyReport[]; competitionReports: CompetitionReport[]; currentStock: StockEntry[]; totalStoreSales: number } }
   | { type: "SET_REPORT_DATE"; payload: string }
   | { type: "SET_STOCK"; payload: { productId: string; quantity: number } }
   | { type: "SET_SALE"; payload: { productId: string; quantity: number } }
-  | { type: "SAVE_DAILY_REPORT" }
+  | { type: "SET_CURRENT_STOCK"; payload: StockEntry[] }
+  | { type: "SAVE_DAILY_REPORT"; payload: DailyReport }
   | { type: "SAVE_STOCK_UPDATE" }
   | { type: "SAVE_COMPETITION_REPORT"; payload: CompetitionReport }
   | { type: "CLEAR_SAVED_MESSAGE" }
-  | { type: "TOGGLE_STOCK_MODE" }
   | { type: "LOAD_SALES_FROM_REPORT"; payload: DailyReport }
-  | { type: "SET_INITIAL_STOCK"; payload: StockEntry[] }
+  | { type: "SET_TOTAL_STORE_SALES"; payload: number }
+  | { type: "SET_LOADING"; payload: boolean }
 
 const today = new Date().toISOString().split("T")[0]
 
 function buildInitialStock() {
-  return products.map((p) => ({
-    productId: p.id,
-    quantity: 0,
-  }))
+  return localProducts.map((p) => ({ productId: p.id, quantity: 0 }))
 }
 
 const initialState: AppState = {
-  products,
-  storeName,
-  dailyReports: mockDailyReports,
-  competitionReports: mockCompetitionReports,
+  products: localProducts,
+  storeName: "Mi Tienda",
+  dailyReports: [],
+  competitionReports: [],
   currentStock: buildInitialStock(),
   currentSales: [],
   stockEditMode: false,
   reportDate: today,
   savedMessage: null,
+  monthlyObjectives,
+  totalStoreSales: 0,
+  loading: true,
 }
 
 function appReducer(state: AppState, action: Action): AppState {
   switch (action.type) {
+    case "INIT_STATE":
+      return { ...state, ...action.payload, loading: false }
+
+    case "SET_LOADING":
+      return { ...state, loading: action.payload }
+
     case "SET_REPORT_DATE":
       return { ...state, reportDate: action.payload }
 
@@ -81,6 +91,9 @@ function appReducer(state: AppState, action: Action): AppState {
       return { ...state, currentStock: stock }
     }
 
+    case "SET_CURRENT_STOCK":
+      return { ...state, currentStock: action.payload }
+
     case "SET_SALE": {
       const existing = state.currentSales.findIndex(
         (s) => s.productId === action.payload.productId
@@ -99,38 +112,15 @@ function appReducer(state: AppState, action: Action): AppState {
     }
 
     case "SAVE_DAILY_REPORT": {
-      const date = state.reportDate
       const existingIdx = state.dailyReports.findIndex(
-        (r) => r.date === date
+        (r) => r.date === action.payload.date
       )
-      const stockForReport = state.currentSales
-        .filter((s) => s.quantity > 0)
-        .map((s) => {
-          const stockEntry = state.currentStock.find(
-            (st) => st.productId === s.productId
-          )
-          return {
-            productId: s.productId,
-            quantity: stockEntry?.quantity ?? 0,
-          }
-        })
-      const updatedReport: DailyReport = {
-        id:
-          existingIdx >= 0
-            ? state.dailyReports[existingIdx].id
-            : `r${Date.now()}`,
-        date,
-        stock: stockForReport,
-        sales: state.currentSales.filter((s) => s.quantity > 0),
-        completed: true,
-        createdAt: new Date().toISOString(),
-      }
       const dailyReports =
         existingIdx >= 0
           ? state.dailyReports.map((r, i) =>
-              i === existingIdx ? updatedReport : r
+              i === existingIdx ? action.payload : r
             )
-          : [updatedReport, ...state.dailyReports]
+          : [action.payload, ...state.dailyReports]
       return {
         ...state,
         dailyReports,
@@ -140,10 +130,7 @@ function appReducer(state: AppState, action: Action): AppState {
     }
 
     case "SAVE_STOCK_UPDATE":
-      return {
-        ...state,
-        savedMessage: "Stock actualizado",
-      }
+      return { ...state, savedMessage: "Stock actualizado" }
 
     case "SAVE_COMPETITION_REPORT":
       return {
@@ -155,9 +142,6 @@ function appReducer(state: AppState, action: Action): AppState {
     case "CLEAR_SAVED_MESSAGE":
       return { ...state, savedMessage: null }
 
-    case "TOGGLE_STOCK_MODE":
-      return { ...state, stockEditMode: !state.stockEditMode }
-
     case "LOAD_SALES_FROM_REPORT":
       return {
         ...state,
@@ -165,8 +149,8 @@ function appReducer(state: AppState, action: Action): AppState {
         currentSales: action.payload.sales,
       }
 
-    case "SET_INITIAL_STOCK":
-      return { ...state, currentStock: action.payload }
+    case "SET_TOTAL_STORE_SALES":
+      return { ...state, totalStoreSales: action.payload }
 
     default:
       return state
@@ -176,14 +160,174 @@ function appReducer(state: AppState, action: Action): AppState {
 interface AppContextType {
   state: AppState
   dispatch: React.Dispatch<Action>
+  saveDailyReport: () => Promise<void>
+  saveStockUpdate: () => Promise<void>
+  saveCompetitionReport: (report: CompetitionReport) => Promise<void>
+  loadSalesFromReport: (report: DailyReport) => void
+  setTotalStoreSales: (value: number) => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
 
 export function AppProvider({ children }: { children: ReactNode }) {
   const [state, dispatch] = useReducer(appReducer, initialState)
+
+  useEffect(() => {
+    async function load() {
+      const [stockRes, reportsRes, salesRes, stockSnapRes, compRes, configRes] =
+        await Promise.all([
+          supabase.from("current_stock").select("*"),
+          supabase.from("daily_reports").select("*").order("date", { ascending: false }),
+          supabase.from("report_sales").select("*"),
+          supabase.from("report_stock").select("*"),
+          supabase.from("competition_reports").select("*").order("date", { ascending: false }),
+          supabase.from("monthly_config").select("*").eq("month", today.slice(0, 7)).single(),
+        ])
+
+      const stock: StockEntry[] = stockRes.data?.map((r: any) => ({
+        productId: r.product_id,
+        quantity: r.quantity,
+      })) ?? buildInitialStock()
+
+      const salesMap: Record<string, SaleEntry[]> = {}
+      const stockMap: Record<string, StockEntry[]> = {}
+      ;(salesRes.data ?? []).forEach((r: any) => {
+        if (!salesMap[r.report_id]) salesMap[r.report_id] = []
+        salesMap[r.report_id].push({ productId: r.product_id, quantity: r.quantity })
+      })
+      ;(stockSnapRes.data ?? []).forEach((r: any) => {
+        if (!stockMap[r.report_id]) stockMap[r.report_id] = []
+        stockMap[r.report_id].push({ productId: r.product_id, quantity: r.quantity })
+      })
+
+      const dailyReports: DailyReport[] = (reportsRes.data ?? []).map((r: any) => ({
+        id: r.id,
+        date: r.date,
+        stock: stockMap[r.id] ?? [],
+        sales: salesMap[r.id] ?? [],
+        completed: r.completed,
+        createdAt: r.created_at,
+      }))
+
+      const competitionReports: CompetitionReport[] = (compRes.data ?? []).map((r: any) => ({
+        id: r.id,
+        date: r.date,
+        competitorName: r.competitor_name,
+        promoters: r.promoters,
+        hours: r.hours,
+        observations: r.observations ?? "",
+        photoUrl: r.photo_url ?? undefined,
+      }))
+
+      const totalStoreSales = configRes.data?.total_store_sales ?? 0
+
+      dispatch({
+        type: "INIT_STATE",
+        payload: { dailyReports, competitionReports, currentStock: stock, totalStoreSales },
+      })
+    }
+    load()
+  }, [])
+
+  const saveDailyReport = useCallback(async () => {
+    const date = state.reportDate
+    const existingIdx = state.dailyReports.findIndex((r) => r.date === date)
+    const reportId = existingIdx >= 0 ? state.dailyReports[existingIdx].id : `r${Date.now()}`
+
+    const activeSales = state.currentSales.filter((s) => s.quantity > 0)
+    const stockForReport = activeSales.map((s) => ({
+      productId: s.productId,
+      quantity: state.currentStock.find((st) => st.productId === s.productId)?.quantity ?? 0,
+    }))
+
+    const report: DailyReport = {
+      id: reportId,
+      date,
+      stock: stockForReport,
+      sales: activeSales,
+      completed: true,
+      createdAt: new Date().toISOString(),
+    }
+
+    const { error: upsertErr } = await supabase.from("daily_reports").upsert(
+      { id: reportId, date, completed: true, created_at: report.createdAt },
+      { onConflict: "date" }
+    )
+    if (upsertErr) { console.error(upsertErr); return }
+
+    await supabase.from("report_sales").delete().eq("report_id", reportId)
+    if (activeSales.length > 0) {
+      await supabase.from("report_sales").insert(
+        activeSales.map((s) => ({ report_id: reportId, product_id: s.productId, quantity: s.quantity }))
+      )
+    }
+
+    await supabase.from("report_stock").delete().eq("report_id", reportId)
+    if (stockForReport.length > 0) {
+      await supabase.from("report_stock").insert(
+        stockForReport.map((s) => ({ report_id: reportId, product_id: s.productId, quantity: s.quantity }))
+      )
+    }
+
+    for (const s of activeSales) {
+      await supabase.from("current_stock").upsert(
+        { product_id: s.productId, quantity: state.currentStock.find((st) => st.productId === s.productId)?.quantity ?? 0 },
+        { onConflict: "product_id" }
+      )
+    }
+
+    dispatch({ type: "SAVE_DAILY_REPORT", payload: report })
+  }, [state.reportDate, state.currentSales, state.currentStock, state.dailyReports])
+
+  const saveStockUpdate = useCallback(async () => {
+    for (const entry of state.currentStock) {
+      await supabase.from("current_stock").upsert(
+        { product_id: entry.productId, quantity: entry.quantity },
+        { onConflict: "product_id" }
+      )
+    }
+    dispatch({ type: "SAVE_STOCK_UPDATE" })
+  }, [state.currentStock])
+
+  const saveCompetitionReport = useCallback(async (report: CompetitionReport) => {
+    const { error } = await supabase.from("competition_reports").insert({
+      id: report.id,
+      date: report.date,
+      competitor_name: report.competitorName,
+      promoters: report.promoters,
+      hours: report.hours,
+      observations: report.observations,
+      photo_url: report.photoUrl ?? null,
+    })
+    if (error) { console.error(error); return }
+    dispatch({ type: "SAVE_COMPETITION_REPORT", payload: report })
+  }, [])
+
+  const loadSalesFromReport = useCallback((report: DailyReport) => {
+    dispatch({ type: "LOAD_SALES_FROM_REPORT", payload: report })
+  }, [])
+
+  const setTotalStoreSales = useCallback(async (value: number) => {
+    const month = today.slice(0, 7)
+    await supabase.from("monthly_config").upsert(
+      { month, total_store_sales: value },
+      { onConflict: "month" }
+    )
+    dispatch({ type: "SET_TOTAL_STORE_SALES", payload: value })
+  }, [])
+
   return (
-    <AppContext.Provider value={{ state, dispatch }}>
+    <AppContext.Provider
+      value={{
+        state,
+        dispatch,
+        saveDailyReport,
+        saveStockUpdate,
+        saveCompetitionReport,
+        loadSalesFromReport,
+        setTotalStoreSales,
+      }}
+    >
       {children}
     </AppContext.Provider>
   )

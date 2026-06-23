@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext"
 import { CompetitionReport, COMPETITOR_BRANDS } from "@/lib/types"
 
 export default function CompetitionPage() {
-  const { state, dispatch } = useApp()
+  const { state, saveCompetitionReport } = useApp()
   const router = useRouter()
 
   const [competitorName, setCompetitorName] = useState<string>(COMPETITOR_BRANDS[0])
@@ -16,7 +16,7 @@ export default function CompetitionPage() {
 
   const canSave = promoters.trim()
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!canSave) return
     const report: CompetitionReport = {
       id: `c${Date.now()}`,
@@ -26,7 +26,7 @@ export default function CompetitionPage() {
       hours: parseInt(hours, 10) || 0,
       observations: observations.trim(),
     }
-    dispatch({ type: "SAVE_COMPETITION_REPORT", payload: report })
+    await saveCompetitionReport(report)
     setPromoters("")
     setHours("")
     setObservations("")
