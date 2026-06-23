@@ -26,6 +26,9 @@ export const products: Product[] = [
   { id: "p21", name: "Enco Air 5 Pro", unit: "unidad", category: "IoT" },
   { id: "p22", name: "Enco X3s", unit: "unidad", category: "IoT" },
   { id: "p23", name: "Enco Clip 2", unit: "unidad", category: "IoT" },
+  { id: "p24", name: "OPPO Watch X", unit: "unidad", category: "IoT" },
+  { id: "p25", name: "Watch X2", unit: "unidad", category: "IoT" },
+  { id: "p26", name: "X2 Mini", unit: "unidad", category: "IoT" },
 ]
 
 export const mockDailyReports: DailyReport[] = [
