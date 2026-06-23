@@ -17,9 +17,7 @@ export const monthlyObjectives: MonthlyObjectives = {
     { productId: "p11", targetUnits: 10, commission75: 4, commission100: 8, isPriority: false },
     { productId: "p12", targetUnits: 15, commission75: 3, commission100: 6, isPriority: false },
     { productId: "p13", targetUnits: 15, commission75: 3, commission100: 5, isPriority: false },
-    { productId: "p14", targetUnits: 10, commission75: 3, commission100: 5, isPriority: false },
-    { productId: "p15", targetUnits: 10, commission75: 3, commission100: 6, isPriority: false },
-    { productId: "p16", targetUnits: 10, commission75: 3, commission100: 5, isPriority: false },
+
   ],
   iotLevels: [
     { level: 1, percentage: 49, bonus: 100 },
