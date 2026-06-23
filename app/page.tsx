@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation"
 import { useApp } from "@/context/AppContext"
-import { CommissionTarget } from "@/lib/types"
+
 
 function getProductSales(state: ReturnType<typeof useApp>["state"]) {
   const currentMonth = new Date().toISOString().slice(0, 7)
@@ -106,12 +106,6 @@ export default function Dashboard() {
 
   const commissionEnabled = mmPercent >= 75
 
-  function estimatedCommission(target: CommissionTarget) {
-    if (mmPercent >= 100) return target.commission100
-    if (mmPercent >= 75) return target.commission75
-    return 0
-  }
-
   return (
     <div className="px-4 pt-6 pb-28">
       <div className="mb-8">
@@ -202,34 +196,75 @@ export default function Dashboard() {
         </div>
 
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-card">
-          <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
+          <h2 className="font-semibold text-slate-800 mb-3 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-brand-100 flex items-center justify-center text-xs text-brand-600 font-bold">P</span>
-            Pilar — comisiones por modelo
+            Pilar — comisiones
           </h2>
-          <div className="space-y-3">
-            {state.monthlyObjectives.commissionTargets.map((ct) => {
-              const ps = productSales.find((p) => p.product.id === ct.productId)
-              const sold = ps?.total ?? 0
-              const rate = estimatedCommission(ct)
-              const estimated = sold * rate
-              return (
-                <div key={ct.productId} className="flex items-center justify-between py-1.5 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors">
-                  <div className="flex items-center gap-1.5 min-w-0">
-                    <span className="text-sm text-slate-700 truncate">{ps?.product.name ?? ct.productId}</span>
-                    {ct.isPriority && <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">Prioridad</span>}
-                  </div>
-                  <div className="flex items-center gap-3 shrink-0">
-                    <span className="text-sm font-bold text-slate-900 tabular-nums">{sold}</span>
-                    {commissionEnabled && (
-                      <span className="text-xs text-slate-400 tabular-nums">{rate}€/u</span>
-                    )}
-                    {commissionEnabled && (
-                      <span className="text-xs font-semibold text-brand-600 tabular-nums w-16 text-right">{estimated.toLocaleString("es-ES")}€</span>
-                    )}
-                  </div>
-                </div>
-              )
-            })}
+          <div className="overflow-x-auto -mx-5">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="text-xs text-slate-400 border-b border-slate-100">
+                  <th className="text-left font-semibold px-4 pb-2">Modelo</th>
+                  <th className="text-center font-semibold pb-2 px-2">Ud.</th>
+                  <th className="text-right font-semibold pb-2 px-3">Al 75%</th>
+                  <th className="text-right font-semibold pb-2 px-3">Al 100%</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50">
+                {state.monthlyObjectives.commissionTargets.map((ct) => {
+                  const ps = productSales.find((p) => p.product.id === ct.productId)
+                  const sold = ps?.total ?? 0
+                  const est75 = sold * ct.commission75
+                  const est100 = sold * ct.commission100
+                  return (
+                    <tr key={ct.productId} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-2 px-4">
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-slate-700">{ps?.product.name ?? ct.productId}</span>
+                          {ct.isPriority && <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Prioridad</span>}
+                        </div>
+                      </td>
+                      <td className="text-center font-bold text-slate-900 tabular-nums py-2 px-2">{sold}</td>
+                      <td className="text-right tabular-nums py-2 px-3">
+                        <span className="text-xs text-slate-400">{ct.commission75}€/u</span>
+                        <br />
+                        <span className="font-semibold text-slate-800">{est75.toLocaleString("es-ES")}€</span>
+                      </td>
+                      <td className="text-right tabular-nums py-2 px-3">
+                        <span className="text-xs text-slate-400">{ct.commission100}€/u</span>
+                        <br />
+                        <span className="font-semibold text-slate-800">{est100.toLocaleString("es-ES")}€</span>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot className="border-t-2 border-slate-200">
+                <tr className="font-bold text-slate-900">
+                  <td className="py-3 px-4 text-sm">Total</td>
+                  <td className="text-center tabular-nums py-3 px-2">
+                    {state.monthlyObjectives.commissionTargets.reduce((s, ct) => {
+                      const ps = productSales.find((p) => p.product.id === ct.productId)
+                      return s + (ps?.total ?? 0)
+                    }, 0)}
+                  </td>
+                  <td className="text-right tabular-nums py-3 px-3 text-brand-600">
+                    {state.monthlyObjectives.commissionTargets.reduce((s, ct) => {
+                      const ps = productSales.find((p) => p.product.id === ct.productId)
+                      const sold = ps?.total ?? 0
+                      return s + sold * ct.commission75
+                    }, 0).toLocaleString("es-ES")}€
+                  </td>
+                  <td className="text-right tabular-nums py-3 px-3 text-emerald-600">
+                    {state.monthlyObjectives.commissionTargets.reduce((s, ct) => {
+                      const ps = productSales.find((p) => p.product.id === ct.productId)
+                      const sold = ps?.total ?? 0
+                      return s + sold * ct.commission100
+                    }, 0).toLocaleString("es-ES")}€
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
         </div>
 
