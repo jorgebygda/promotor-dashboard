@@ -88,8 +88,8 @@ export default function Dashboard() {
       .filter((s) => state.products.find((p) => p.id === s.productId)?.category === "IoT")
       .reduce((s, e) => s + e.quantity, 0), 0)
 
-  const accessoryPct = state.monthlyObjectives.accessoryTarget > 0
-    ? Math.round((accessorySales / state.monthlyObjectives.accessoryTarget) * 100)
+  const accessoryPct = totalTarget > 0
+    ? Math.round((accessorySales / totalTarget) * 100)
     : 0
 
   const currentIotLevel = [...state.monthlyObjectives.iotLevels]
@@ -204,34 +204,27 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl border border-slate-100 p-5 shadow-card">
           <h2 className="font-semibold text-slate-800 mb-4 flex items-center gap-2">
             <span className="w-5 h-5 rounded-md bg-brand-100 flex items-center justify-center text-xs text-brand-600 font-bold">P</span>
-            Pilar — progreso por modelo
+            Pilar — comisiones por modelo
           </h2>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {state.monthlyObjectives.commissionTargets.map((ct) => {
               const ps = productSales.find((p) => p.product.id === ct.productId)
               const sold = ps?.total ?? 0
-              const unitPct = ct.targetUnits > 0 ? Math.min(100, Math.round((sold / ct.targetUnits) * 100)) : 0
-              const unitCommission = estimatedCommission(ct)
-              const estimated = sold * unitCommission
+              const rate = estimatedCommission(ct)
+              const estimated = sold * rate
               return (
-                <div key={ct.productId}>
-                  <div className="flex items-center justify-between mb-1">
-                    <div className="flex items-center gap-1.5">
-                      <span className="text-sm font-medium text-slate-700">{ps?.product.name ?? ct.productId}</span>
-                      {ct.isPriority && <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded">Prioridad</span>}
-                    </div>
-                    <span className="text-sm font-bold text-slate-900 tabular-nums">{sold}/{ct.targetUnits}</span>
+                <div key={ct.productId} className="flex items-center justify-between py-1.5 px-2 -mx-2 rounded-lg hover:bg-slate-50 transition-colors">
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-sm text-slate-700 truncate">{ps?.product.name ?? ct.productId}</span>
+                    {ct.isPriority && <span className="text-[10px] font-bold text-rose-500 bg-rose-50 px-1.5 py-0.5 rounded shrink-0">Prioridad</span>}
                   </div>
-                  <div className="w-full bg-slate-100 rounded-full h-2 mb-1 overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-500 ${unitPct >= 100 ? "bg-emerald-500" : unitPct >= 75 ? "bg-brand-500" : unitPct >= 50 ? "bg-amber-400" : "bg-slate-300"}`}
-                      style={{ width: `${unitPct}%` }}
-                    />
-                  </div>
-                  <div className="flex justify-between text-xs text-slate-400">
-                    <span>{unitPct}%</span>
+                  <div className="flex items-center gap-3 shrink-0">
+                    <span className="text-sm font-bold text-slate-900 tabular-nums">{sold}</span>
                     {commissionEnabled && (
-                      <span>{unitCommission}€/u — {estimated.toLocaleString("es-ES")}€ estimados</span>
+                      <span className="text-xs text-slate-400 tabular-nums">{rate}€/u</span>
+                    )}
+                    {commissionEnabled && (
+                      <span className="text-xs font-semibold text-brand-600 tabular-nums w-16 text-right">{estimated.toLocaleString("es-ES")}€</span>
                     )}
                   </div>
                 </div>
@@ -254,11 +247,9 @@ export default function Dashboard() {
             </div>
             <div className="flex-1">
               <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider block mb-1">
-                Objetivo
+                Objetivo móviles
               </label>
-              <p className="text-2xl font-bold text-slate-900">
-                {state.monthlyObjectives.accessoryTarget}
-              </p>
+              <p className="text-2xl font-bold text-slate-900">{totalTarget}</p>
             </div>
           </div>
           <p className="text-xs text-slate-400 -mt-2 mb-2">
@@ -270,7 +261,7 @@ export default function Dashboard() {
               style={{ width: `${Math.min(100, accessoryPct)}%` }}
             />
           </div>
-          <p className="text-xs text-slate-400 mb-3">{accessoryPct}% del objetivo</p>
+          <p className="text-xs text-slate-400 mb-3">{accessoryPct}% del objetivo ({accessorySales} / {totalTarget})</p>
           <div className="space-y-1.5">
             {state.monthlyObjectives.iotLevels.map((l) => {
               const achieved = accessoryPct >= l.percentage
