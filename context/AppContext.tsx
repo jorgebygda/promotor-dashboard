@@ -262,14 +262,14 @@ export function AppProvider({ children }: { children: ReactNode }) {
       { id: reportId, date, completed: true, created_at: report.createdAt },
       { onConflict: "date" }
     )
-    if (upsertErr) { dispatch({ type: "SET_ERROR", payload: "Error al guardar: " + upsertErr.message }); return }
+    if (upsertErr) { console.error(upsertErr); dispatch({ type: "SET_ERROR", payload: "Error al guardar: " + upsertErr.message }); return }
 
     await supabase.from("report_sales").delete().eq("report_id", reportId)
     if (activeSales.length > 0) {
       const { error } = await supabase.from("report_sales").insert(
         activeSales.map((s) => ({ report_id: reportId, product_id: s.productId, quantity: s.quantity }))
       )
-      if (error) { dispatch({ type: "SET_ERROR", payload: "Error al guardar ventas: " + error.message }); return }
+      if (error) { console.error(error); dispatch({ type: "SET_ERROR", payload: "Error al guardar ventas: " + error.message }); return }
     }
 
     await supabase.from("report_stock").delete().eq("report_id", reportId)
@@ -277,15 +277,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
       const { error } = await supabase.from("report_stock").insert(
         stockForReport.map((s) => ({ report_id: reportId, product_id: s.productId, quantity: s.quantity }))
       )
-      if (error) { dispatch({ type: "SET_ERROR", payload: "Error al guardar stock: " + error.message }); return }
+      if (error) { console.error(error); dispatch({ type: "SET_ERROR", payload: "Error al guardar stock: " + error.message }); return }
     }
 
     for (const s of activeSales) {
+      const entry = state.currentStock.find((st) => st.productId === s.productId)
       const { error } = await supabase.from("current_stock").upsert(
-        { product_id: s.productId, quantity: state.currentStock.find((st) => st.productId === s.productId)?.quantity ?? 0 },
+        { product_id: s.productId, quantity: entry?.quantity ?? 0 },
         { onConflict: "product_id" }
       )
-      if (error) { dispatch({ type: "SET_ERROR", payload: "Error al guardar stock: " + error.message }); return }
+      if (error) { console.error(error); dispatch({ type: "SET_ERROR", payload: "Error al guardar stock: " + error.message }); return }
     }
 
     dispatch({ type: "SAVE_DAILY_REPORT", payload: report })
