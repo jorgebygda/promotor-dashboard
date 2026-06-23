@@ -171,6 +171,7 @@ interface AppContextType {
   loadSalesFromReport: (report: DailyReport) => void
   setTotalStoreSales: (value: number) => Promise<void>
   resetAllData: () => Promise<void>
+  resetSalesAndStock: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -332,6 +333,16 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_TOTAL_STORE_SALES", payload: value })
   }, [])
 
+  const resetSalesAndStock = useCallback(async () => {
+    await Promise.all([
+      supabase.from("daily_reports").delete().neq("id", "x"),
+      supabase.from("report_sales").delete().neq("id", 0),
+      supabase.from("report_stock").delete().neq("id", 0),
+      supabase.from("current_stock").delete().neq("product_id", "x"),
+    ])
+    dispatch({ type: "RESET_STATE" })
+  }, [])
+
   const resetAllData = useCallback(async () => {
     await Promise.all([
       supabase.from("daily_reports").delete().neq("id", "x"),
@@ -355,6 +366,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         loadSalesFromReport,
         setTotalStoreSales,
         resetAllData,
+        resetSalesAndStock,
       }}
     >
       {children}

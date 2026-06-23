@@ -3,7 +3,6 @@
 import { useRouter } from "next/navigation"
 import { useApp } from "@/context/AppContext"
 
-
 function getProductSales(state: ReturnType<typeof useApp>["state"]) {
   const currentMonth = new Date().toISOString().slice(0, 7)
   const monthly = state.dailyReports
@@ -18,7 +17,7 @@ function getProductSales(state: ReturnType<typeof useApp>["state"]) {
 }
 
 export default function Dashboard() {
-  const { state, dispatch, setTotalStoreSales, loadSalesFromReport, resetAllData } = useApp()
+  const { state, dispatch, setTotalStoreSales, loadSalesFromReport, resetAllData, resetSalesAndStock } = useApp()
   const router = useRouter()
 
   if (state.loading) {
@@ -435,24 +434,38 @@ export default function Dashboard() {
         </div>
       )}
 
-      <details className="mt-8 group">
-        <summary className="text-xs text-slate-300 hover:text-red-400 transition-colors cursor-pointer list-none text-center select-none">
-          <span className="group-open:hidden">···</span>
-          <span className="hidden group-open:inline text-red-400">Reiniciar todos los datos</span>
-        </summary>
-        <div className="mt-3 text-center">
-          <p className="text-xs text-slate-400 mb-2">Esta acción borra todas las ventas, stock y reportes.</p>
-          <button
-            onClick={async () => {
-              await resetAllData()
+      <div className="mt-8 space-y-2">
+        <button
+          onClick={async () => {
+            if (confirm("¿Borrar todas las ventas y stock? Esta acción no se puede deshacer.")) {
+              await resetSalesAndStock()
               window.location.reload()
-            }}
-            className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
-          >
-            Sí, borrar todo
-          </button>
-        </div>
-      </details>
+            }
+          }}
+          className="w-full bg-red-50 hover:bg-red-100 active:bg-red-200 text-red-600 font-medium py-3 px-6 rounded-2xl border border-red-200 transition-all duration-200 text-sm"
+        >
+          Eliminar ventas y stock
+        </button>
+
+        <details className="group">
+          <summary className="text-xs text-slate-300 hover:text-red-400 transition-colors cursor-pointer list-none text-center select-none">
+            <span className="group-open:hidden">···</span>
+            <span className="hidden group-open:inline text-red-400">Reiniciar todos los datos</span>
+          </summary>
+          <div className="mt-3 text-center">
+            <p className="text-xs text-slate-400 mb-2">Esta acción borra todas las ventas, stock, reportes de competencia y configuración.</p>
+            <button
+              onClick={async () => {
+                await resetAllData()
+                window.location.reload()
+              }}
+              className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
+            >
+              Sí, borrar todo
+            </button>
+          </div>
+        </details>
+      </div>
     </div>
   )
 }
