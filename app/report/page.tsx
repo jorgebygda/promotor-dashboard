@@ -54,7 +54,7 @@ function ReportContent() {
       type: "SET_SALE",
       payload: { productId, quantity: value },
     })
-    if (diff > 0) {
+    if (diff !== 0) {
       const stock = getStock(productId)
       dispatch({
         type: "SET_STOCK",

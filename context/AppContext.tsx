@@ -80,14 +80,11 @@ function appReducer(state: AppState, action: Action): AppState {
         (s) => s.productId === action.payload.productId
       )
       const stock = [...state.currentStock]
+      const qty = Math.max(0, action.payload.quantity)
       if (existing >= 0) {
-        if (action.payload.quantity <= 0) {
-          stock.splice(existing, 1)
-        } else {
-          stock[existing] = action.payload
-        }
-      } else if (action.payload.quantity > 0) {
-        stock.push(action.payload)
+        stock[existing] = { productId: action.payload.productId, quantity: qty }
+      } else {
+        stock.push({ productId: action.payload.productId, quantity: qty })
       }
       return { ...state, currentStock: stock }
     }
