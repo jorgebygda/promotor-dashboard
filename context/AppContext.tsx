@@ -42,6 +42,7 @@ type Action =
   | { type: "SET_TOTAL_STORE_SALES"; payload: number }
   | { type: "SET_LOADING"; payload: boolean }
   | { type: "SET_ERROR"; payload: string }
+  | { type: "RESET_STATE" }
 
 const today = new Date().toISOString().split("T")[0]
 
@@ -153,6 +154,9 @@ function appReducer(state: AppState, action: Action): AppState {
     case "SET_ERROR":
       return { ...state, savedMessage: action.payload }
 
+    case "RESET_STATE":
+      return { ...initialState, loading: false }
+
     default:
       return state
   }
@@ -166,6 +170,7 @@ interface AppContextType {
   saveCompetitionReport: (report: CompetitionReport) => Promise<void>
   loadSalesFromReport: (report: DailyReport) => void
   setTotalStoreSales: (value: number) => Promise<void>
+  resetAllData: () => Promise<void>
 }
 
 const AppContext = createContext<AppContextType | undefined>(undefined)
@@ -327,6 +332,18 @@ export function AppProvider({ children }: { children: ReactNode }) {
     dispatch({ type: "SET_TOTAL_STORE_SALES", payload: value })
   }, [])
 
+  const resetAllData = useCallback(async () => {
+    await Promise.all([
+      supabase.from("daily_reports").delete().neq("id", "x"),
+      supabase.from("report_sales").delete().neq("id", 0),
+      supabase.from("report_stock").delete().neq("id", 0),
+      supabase.from("current_stock").delete().neq("product_id", "x"),
+      supabase.from("competition_reports").delete().neq("id", "x"),
+      supabase.from("monthly_config").delete().neq("month", "x"),
+    ])
+    dispatch({ type: "RESET_STATE" })
+  }, [])
+
   return (
     <AppContext.Provider
       value={{
@@ -337,6 +354,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
         saveCompetitionReport,
         loadSalesFromReport,
         setTotalStoreSales,
+        resetAllData,
       }}
     >
       {children}

@@ -18,7 +18,7 @@ function getProductSales(state: ReturnType<typeof useApp>["state"]) {
 }
 
 export default function Dashboard() {
-  const { state, dispatch, setTotalStoreSales, loadSalesFromReport } = useApp()
+  const { state, dispatch, setTotalStoreSales, loadSalesFromReport, resetAllData } = useApp()
   const router = useRouter()
 
   if (state.loading) {
@@ -434,6 +434,25 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+
+      <details className="mt-8 group">
+        <summary className="text-xs text-slate-300 hover:text-red-400 transition-colors cursor-pointer list-none text-center select-none">
+          <span className="group-open:hidden">···</span>
+          <span className="hidden group-open:inline text-red-400">Reiniciar todos los datos</span>
+        </summary>
+        <div className="mt-3 text-center">
+          <p className="text-xs text-slate-400 mb-2">Esta acción borra todas las ventas, stock y reportes.</p>
+          <button
+            onClick={async () => {
+              await resetAllData()
+              window.location.reload()
+            }}
+            className="bg-red-500 hover:bg-red-600 active:bg-red-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors"
+          >
+            Sí, borrar todo
+          </button>
+        </div>
+      </details>
     </div>
   )
 }
